@@ -19,6 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set VERSION (YEAR.MONTH.DAY)
-        run: echo "VERSION=$(date +'%Y.%m.%d')" >> $GITHUB_ENV
+        run: echo "VERSION=$(date +'%Y.%m.%d')+$GITHUB_RUN_ID" >> $GITHUB_ENV
       - name: Dummy stage deploy (backend)
         run: echo "[stage] deployment (backend) — $VERSION"
