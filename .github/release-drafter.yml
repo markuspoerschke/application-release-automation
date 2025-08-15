@@ -1,5 +1,5 @@
-name-template: '$RESOLVED_VERSION'
-tag-template: '$RESOLVED_VERSION'
+name-template: '$YEAR.$MONTH.$DAY.NEXT_PATCH_VERSION'
+tag-template: '$YEAR.$MONTH.$DAY.NEXT_PATCH_VERSION'
 categories:
   - title: '🚀 Features'
     labels:
