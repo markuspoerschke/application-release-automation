@@ -2,7 +2,7 @@ name: Deploy to Production (on release publish)
 
 on:
   release:
-    types: [published]
+    types: [ released ]
 
 permissions:
   contents: read
