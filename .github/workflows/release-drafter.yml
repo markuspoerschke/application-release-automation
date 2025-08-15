@@ -18,17 +18,17 @@ jobs:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
+
     steps:
-      - name: Get current date in Europe/Berlin timezone
+      - name: Release Variables
         id: vars
         run: |
-          echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
-          echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "version=$(TZ='Europe/Berlin' date +'%Y-%m-%d')-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - uses: release-drafter/release-drafter@v6
         with:
-          version: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.short_sha }}'
-          name: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.short_sha }}'
-          tag: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.short_sha }}'
+          version: '${{ steps.vars.outputs.version }}'
+          name: '${{ steps.vars.outputs.version }}'
+          tag: '${{ steps.vars.outputs.version }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
