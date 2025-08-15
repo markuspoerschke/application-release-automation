@@ -18,7 +18,13 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
-      - name: Set VERSION (YEAR.MONTH.DAY)
-        run: echo "VERSION=$(date +'%Y.%m.%d')+$GITHUB_RUN_ID" >> $GITHUB_ENV
+      - name: Get latest release version
+        id: release_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .tag_name)
+          echo "VERSION=${version}" >> $GITHUB_ENV
       - name: Dummy stage deploy (backend)
         run: echo "[stage] deployment (backend) — $VERSION"
