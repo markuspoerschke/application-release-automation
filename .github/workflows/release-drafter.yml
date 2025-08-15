@@ -16,15 +16,33 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Set date environment variables
+      - name: Get current date in Europe/Berlin timezone
+        id: date
         run: |
-          echo "YEAR=$(TZ='Europe/Berlin' date '+%Y')" >> $GITHUB_ENV
-          echo "MONTH=$(TZ='Europe/Berlin' date '+%m')" >> $GITHUB_ENV
-          echo "DAY=$(TZ='Europe/Berlin' date '+%d')" >> $GITHUB_ENV
+          echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+
+      - name: Get daily release count
+        id: release_count
+        run: |
+          # Get list of releases for today
+          TODAY=$(TZ='Europe/Berlin' date +'%Y.%m.%d')
+          RELEASES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" | \
+            grep -o "\"tag_name\":\"$TODAY\\.[0-9]*\"" || echo "")
+
+          # Count releases and increment by 1
+          if [ -z "$RELEASES" ]; then
+            COUNT=1
+          else
+            # Extract the highest number
+            HIGHEST=$(echo "$RELEASES" | grep -o "$TODAY\\.[0-9]*" | sort -Vr | head -n1 | cut -d. -f4)
+            COUNT=$((HIGHEST + 1))
+          fi
+
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
 
       - uses: release-drafter/release-drafter@v6
+        with:
+          version: '${{ steps.date.outputs.date }}.${{ steps.release_count.outputs.count }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          YEAR: ${{ env.YEAR }}
-          MONTH: ${{ env.MONTH }}
-          DAY: ${{ env.DAY }}
