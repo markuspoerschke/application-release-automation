@@ -2,7 +2,7 @@ name: Release Drafter
 
 on:
   push:
-    branches: [ development ]
+    branches: [ main ]
   pull_request:
     types: [ opened, reopened, synchronize ]
 
@@ -20,31 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get current date in Europe/Berlin timezone
-        id: date
+        id: vars
         run: |
           echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
-
-      - name: Get daily release counter
-        id: counter
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          max_count=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/releases" \
-            | jq '[.[] | select(.tag_name | test("^${{ steps.date.outputs.date }}\\.\\d+$")) | .tag_name | split(".") | last | tonumber] | if length > 0 then max else 0 end')
-          next_count=$((max_count+1))
-          echo "count=$next_count" >> $GITHUB_OUTPUT
-
-      - name: Debug
-        run: |
-          echo "Date: ${{ steps.date.outputs.date }}"
-          echo "Counter: ${{ steps.counter.outputs.count }}"
-          echo "Run ID: $GITHUB_RUN_ID"
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - uses: release-drafter/release-drafter@v6
         with:
-          version: '${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}'
-          name: '${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}'
-          tag: '${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}'
+          version: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.sha_short }}'
+          name: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.sha_short }}'
+          tag: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.sha_short }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
