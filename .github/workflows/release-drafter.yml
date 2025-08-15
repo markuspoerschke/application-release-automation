@@ -21,13 +21,25 @@ jobs:
         run: |
           echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
 
+      - name: Get daily release counter
+        id: counter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" \
+            | jq '[.[] | select(.name | test("^${{ steps.date.outputs.date }}-\\d+$"))] | length')
+          next_count=$((count+1))
+          echo "count=$next_count" >> $GITHUB_OUTPUT
+
       - name: Debug
         run: |
           echo "Date: ${{ steps.date.outputs.date }}"
+          echo "Counter: ${{ steps.counter.outputs.count }}"
           echo "Run ID: $GITHUB_RUN_ID"
 
       - uses: release-drafter/release-drafter@v6
         with:
-          name: '${{ steps.date.outputs.date }}+${{ github.run_id }}'
+          name: '${{ steps.date.outputs.date }}-${{ steps.counter.outputs.count }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
