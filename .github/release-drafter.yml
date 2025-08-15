@@ -1,3 +1,6 @@
+name-template: '$INPUT_VERSION'
+tag-template: '$INPUT_VERSION'
+version-template: '$INPUT_VERSION'
 categories:
   - title: '🚀 Features'
     labels:
