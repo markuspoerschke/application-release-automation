@@ -59,7 +59,7 @@ jobs:
               body: `## Hotfix Release ${version}\n\nThis is an automated hotfix release.`,
               draft: false,
               prerelease: false,
-              generate_release_notes: true
+              generate_release_notes: false
             });
 
             console.log(`Created release: ${response.data.html_url}`);
