@@ -1,6 +1,6 @@
-name-template: '$INPUT_VERSION'
-tag-template: '$INPUT_VERSION'
-version-template: '$INPUT_VERSION'
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
+version-template: '$RESOLVED_VERSION'
 categories:
   - title: '🚀 Features'
     labels:
