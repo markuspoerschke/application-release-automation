@@ -1,0 +1,24 @@
+name: Deploy to Stage
+
+on:
+  push:
+    branches: [ development ]
+
+concurrency:
+  group: stage-deploy
+  cancel-in-progress: false
+
+env:
+  TZ: Europe/Berlin
+
+jobs:
+  backend:
+    name: Backend → stage
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set VERSION (YEAR.MONTH.DAY)
+        run: echo "VERSION=$(date +'%Y.%m.%d')" >> $GITHUB_ENV
+      - name: Dummy stage deploy (backend)
+        run: echo "[stage] deployment (backend) — $VERSION"
