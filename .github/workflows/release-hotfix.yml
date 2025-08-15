@@ -1,4 +1,4 @@
-name: Hotfix Release
+name: Release Hotfix
 
 on:
   pull_request:
