@@ -21,32 +21,13 @@ jobs:
         run: |
           echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
 
-      - name: Get daily release count
-        run: |
-          # Get list of releases for today
-          TODAY=$(TZ='Europe/Berlin' date +'%Y.%m.%d')
-          RELEASES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases" | \
-            grep -o "\"tag_name\":\"$TODAY\\.[0-9]*\"" || echo "")
-
-          # Count releases and increment by 1
-          if [ -z "$RELEASES" ]; then
-            COUNT=1
-          else
-            # Extract the highest number
-            HIGHEST=$(echo "$RELEASES" | grep -o "$TODAY\\.[0-9]*" | sort -Vr | head -n1 | cut -d. -f4)
-            COUNT=$((HIGHEST + 1))
-          fi
-          
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-
       - name: Debug
         run: |
           echo "Date: ${{ steps.date.outputs.date }}"
-          echo "Release Count: ${{ steps.release_count.outputs.count }}"
+          echo "Run ID: $GITHUB_RUN_ID"
 
       - uses: release-drafter/release-drafter@v6
         with:
-          version: '${{ steps.date.outputs.date }}.${{ steps.release_count.outputs.count }}'
+          version: '${{ steps.date.outputs.date }}+$GITHUB_RUN_ID'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
