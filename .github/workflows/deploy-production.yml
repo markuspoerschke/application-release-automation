@@ -1,8 +1,8 @@
 name: Deploy to Production (on release publish)
 
 on:
-  release:
-    types: [ released ]
+  push:
+    tags: [ '*' ]
 
 permissions:
   contents: read
