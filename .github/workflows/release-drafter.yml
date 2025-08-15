@@ -23,12 +23,12 @@ jobs:
         id: vars
         run: |
           echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - uses: release-drafter/release-drafter@v6
         with:
-          version: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.sha_short }}'
-          name: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.sha_short }}'
-          tag: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.sha_short }}'
+          version: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.short_sha }}'
+          name: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.short_sha }}'
+          tag: '${{ steps.vars.outputs.date }}.${{ steps.vars.outputs.short_sha }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
