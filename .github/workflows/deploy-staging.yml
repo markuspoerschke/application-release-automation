@@ -1,8 +1,11 @@
 name: Deploy to Stage
 
 on:
-  push:
-    branches: [ development ]
+  workflow_run:
+    workflows: ["Release Drafter"]
+    branches: [development]
+    types:
+      - completed
 
 concurrency:
   group: stage-deploy
@@ -16,9 +19,10 @@ jobs:
     name: Backend → stage
     runs-on: ubuntu-latest
     environment: staging
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Get latest release version
+      - name: Get latest draft release version
         id: release_version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
