@@ -40,6 +40,8 @@ jobs:
 
       - uses: release-drafter/release-drafter@v6
         with:
+          version: '${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}'
           name: '${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}'
+          tag: '${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
