@@ -1,11 +1,8 @@
 name: Deploy to Stage
 
 on:
-  workflow_run:
-    workflows: ["Release Drafter"]
+  push:
     branches: [main]
-    types:
-      - completed
 
 concurrency:
   group: stage-deploy
@@ -19,7 +16,6 @@ jobs:
     name: Backend → stage
     runs-on: ubuntu-latest
     environment: staging
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - name: Release Variables
