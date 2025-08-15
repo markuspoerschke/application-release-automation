@@ -2,46 +2,19 @@ name: Release Hotfix
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
     branches:
       - main
-  push:
-    branches:
-      - main
+    types:
+      - opened
+      - closed
 
 permissions:
   contents: read
 
 jobs:
-  check_hotfix_branch:
-    runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/')) ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    outputs:
-      is_hotfix: ${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/') || github.event_name == 'push' && contains(github.event.head_commit.message, 'Merge pull request') && contains(github.event.head_commit.message, 'hotfix/') }}
-      pr_number: ${{ github.event.pull_request.number }}
-    steps:
-      - name: Check if PR is from hotfix branch
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "Processing PR from branch ${{ github.head_ref }}"
-          echo "is_hotfix=${{ startsWith(github.head_ref, 'hotfix/') }}" >> $GITHUB_OUTPUT
-
-      - name: Check if push is from merged hotfix PR
-        if: github.event_name == 'push'
-        run: |
-          echo "Processing push to main branch"
-          echo "Commit message: ${{ github.event.head_commit.message }}"
-          if [[ "${{ github.event.head_commit.message }}" == *"Merge pull request"* && "${{ github.event.head_commit.message }}" == *"hotfix/"* ]]; then
-            echo "is_hotfix=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_hotfix=false" >> $GITHUB_OUTPUT
-          fi
-
   add_comment:
-    needs: check_hotfix_branch
-    if: github.event_name == 'pull_request' && needs.check_hotfix_branch.outputs.is_hotfix == 'true'
+    name: 'Add Comment to Hotfix PR'
+    if: startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.action == 'opened'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -59,21 +32,12 @@ jobs:
             })
 
   create_hotfix_release:
-    needs: check_hotfix_branch
-    if: github.event_name == 'push' && needs.check_hotfix_branch.outputs.is_hotfix == 'true'
+    name: 'Create Hotfix Release'
+    if: startsWith(github.event.pull_request.head.ref, 'hotfix/') && github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    # Use a concurrency group to avoid conflicts with release-drafter
-    concurrency:
-      group: release-creation
-      cancel-in-progress: false
     steps:
-      - name: Get current date in Europe/Berlin timezone
-        id: date
-        run: |
-          echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
-
       - name: Release Variables
         id: vars
         run: |
@@ -87,6 +51,7 @@ jobs:
             const version = '${{ steps.vars.outputs.version }}';
 
             const response = await github.rest.repos.createRelease({
+              target_commitish: context.payload.pull_request.head.sha,
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: version,
