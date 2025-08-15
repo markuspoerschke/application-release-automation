@@ -1,0 +1,112 @@
+name: Hotfix Release
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check_hotfix_branch:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/')) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    outputs:
+      is_hotfix: ${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'hotfix/') || github.event_name == 'push' && contains(github.event.head_commit.message, 'Merge pull request') && contains(github.event.head_commit.message, 'hotfix/') }}
+      pr_number: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Check if PR is from hotfix branch
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Processing PR from branch ${{ github.head_ref }}"
+          echo "is_hotfix=${{ startsWith(github.head_ref, 'hotfix/') }}" >> $GITHUB_OUTPUT
+
+      - name: Check if push is from merged hotfix PR
+        if: github.event_name == 'push'
+        run: |
+          echo "Processing push to main branch"
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          if [[ "${{ github.event.head_commit.message }}" == *"Merge pull request"* && "${{ github.event.head_commit.message }}" == *"hotfix/"* ]]; then
+            echo "is_hotfix=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_hotfix=false" >> $GITHUB_OUTPUT
+          fi
+
+  add_comment:
+    needs: check_hotfix_branch
+    if: github.event_name == 'pull_request' && needs.check_hotfix_branch.outputs.is_hotfix == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Add comment to PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **IMPORTANT**: This is a hotfix PR. Merging this PR will automatically create a release and deploy to production.'
+            })
+
+  create_hotfix_release:
+    needs: check_hotfix_branch
+    if: github.event_name == 'push' && needs.check_hotfix_branch.outputs.is_hotfix == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Use a concurrency group to avoid conflicts with release-drafter
+    concurrency:
+      group: release-creation
+      cancel-in-progress: false
+    steps:
+      - name: Get current date in Europe/Berlin timezone
+        id: date
+        run: |
+          echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+
+      - name: Get daily release counter
+        id: counter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          max_count=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" \
+            | jq '[.[] | select(.tag_name | test("^${{ steps.date.outputs.date }}\\.\\d+$")) | .tag_name | split(".") | last | tonumber] | if length > 0 then max else 0 end')
+          next_count=$((max_count+1))
+          echo "count=$next_count" >> $GITHUB_OUTPUT
+
+      - name: Debug
+        run: |
+          echo "Date: ${{ steps.date.outputs.date }}"
+          echo "Counter: ${{ steps.counter.outputs.count }}"
+          echo "Run ID: $GITHUB_RUN_ID"
+
+      - name: Create Release
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const version = `${{ steps.date.outputs.date }}.${{ steps.counter.outputs.count }}`;
+
+            const response = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: version,
+              name: version,
+              body: `## Hotfix Release ${version}\n\nThis is an automated hotfix release.`,
+              draft: false,
+              prerelease: false,
+              generate_release_notes: true
+            });
+
+            console.log(`Created release: ${response.data.html_url}`);

@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   update_release_draft:
+    concurrency:
+      group: release-creation
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
