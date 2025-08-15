@@ -26,10 +26,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          count=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          max_count=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases" \
-            | jq '[.[] | select(.name | test("^${{ steps.date.outputs.date }}-\\d+$"))] | length')
-          next_count=$((count+1))
+            | jq '[.[] | select(.name | test("^${{ steps.date.outputs.date }}\\.\\d+$")) | .name | split(".") | last | tonumber] | if length > 0 then max else 0 end')
+          next_count=$((max_count+1))
           echo "count=$next_count" >> $GITHUB_OUTPUT
 
       - name: Debug
