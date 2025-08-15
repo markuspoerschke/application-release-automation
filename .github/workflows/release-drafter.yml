@@ -22,7 +22,6 @@ jobs:
           echo "date=$(TZ='Europe/Berlin' date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
 
       - name: Get daily release count
-        id: release_count
         run: |
           # Get list of releases for today
           TODAY=$(TZ='Europe/Berlin' date +'%Y.%m.%d')
@@ -38,8 +37,13 @@ jobs:
             HIGHEST=$(echo "$RELEASES" | grep -o "$TODAY\\.[0-9]*" | sort -Vr | head -n1 | cut -d. -f4)
             COUNT=$((HIGHEST + 1))
           fi
-
+          
           echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+      - name: Debug
+        run: |
+          echo "Date: ${{ steps.date.outputs.date }}"
+          echo "Release Count: ${{ steps.release_count.outputs.count }}"
 
       - uses: release-drafter/release-drafter@v6
         with:
