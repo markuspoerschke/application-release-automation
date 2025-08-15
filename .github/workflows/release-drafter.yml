@@ -28,8 +28,8 @@ jobs:
 
       - uses: release-drafter/release-drafter@v6
         with:
-          version: '2025.08.33'
-          name: '2025.08.32'
-          tag: '2025.08.31'
+          version: 'v2025.08.33'
+          name: 'v2025.08.32'
+          tag: 'v2025.08.31'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
